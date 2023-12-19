@@ -36,13 +36,10 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.1.0";
+        private const string modVersion = "1.2.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
-
-        public static Item item;
-        public static GameObject itemObject;
 
         public static bool storeEnabled;
         public static int storeCost;
@@ -50,8 +47,10 @@ namespace LCOuijaBoard
         public static int scrapRarity;
 
         public static GameObject OuijaNetworkerPrefab;
-        public static GameObject OuijaUIPrefab;
-        public static GameObject OuijaUI;
+        public static GameObject OuijaTextUIPrefab;
+        public static GameObject OuijaTextUI;
+        public static GameObject OuijaErrorUIPrefab;
+        public static GameObject OuijaErrorUI;
 
         private void Awake()
         {
@@ -59,11 +58,14 @@ namespace LCOuijaBoard
             OuijaNetworkerPrefab = data.LoadAsset<GameObject>("Assets/OuijaNetworker.prefab");
             OuijaNetworkerPrefab.AddComponent<OuijaNetworker>();
 
-            OuijaUIPrefab = data.LoadAsset<GameObject>("Assets/TextUI.prefab");
-            itemObject = data.LoadAsset<GameObject>("Assets/OuijaBoard.prefab");
+            OuijaTextUIPrefab = data.LoadAsset<GameObject>("Assets/OuijaTextUI.prefab");
+            OuijaErrorUIPrefab = data.LoadAsset<GameObject>("Assets/OuijaErrorUI.prefab");
+            GameObject itemStoreObject = data.LoadAsset<GameObject>("Assets/OuijaBoardStore.prefab");
+            GameObject itemScrapObject = data.LoadAsset<GameObject>("Assets/OuijaBoardScrap.prefab");
 
             NetworkPrefabs.RegisterNetworkPrefab(OuijaNetworkerPrefab);
-            NetworkPrefabs.RegisterNetworkPrefab(itemObject);
+            NetworkPrefabs.RegisterNetworkPrefab(itemStoreObject);
+            NetworkPrefabs.RegisterNetworkPrefab(itemScrapObject);
 
             InputAction action = new InputAction(binding: "<Keyboard>/#(o)");
             action.performed += UIHandler.ToggleUI;
@@ -78,16 +80,17 @@ namespace LCOuijaBoard
             if (storeCost < 0) { storeCost = 0; }
             if (scrapRarity < 0) { scrapRarity = 0; }
 
-            item = data.LoadAsset<Item>("Assets/OuijaBoardItem.asset");
+            Item storeItem = data.LoadAsset<Item>("Assets/OuijaBoardStoreItem.asset");
+            Item scrapItem = data.LoadAsset<Item>("Assets/OuijaBoardScrapItem.asset");
             if (storeEnabled)
             {
                 Debug.Log($"Ouija Board store enabled at {storeCost} credits");
-                Items.RegisterShopItem(item, storeCost);
+                Items.RegisterShopItem(storeItem, storeCost);
             }
             if (storeEnabled)
             {
                 Debug.Log($"Ouija Board scrap spawn enabled at {scrapRarity} rarity weight");
-                Items.RegisterScrap(item, scrapRarity, Levels.LevelTypes.All);
+                Items.RegisterScrap(scrapItem, scrapRarity, Levels.LevelTypes.All);
             }
 
             NetcodeWeaver();
@@ -102,10 +105,12 @@ namespace LCOuijaBoard
             public static TMP_InputField input;
             public static bool registered;
 
+            public static float lastError = 0;
+
             public static TMP_InputField GetInput()
             {
                 if (registered && (input != null)) return input;
-                inputObject = OuijaUI.transform.GetChild(2).gameObject;
+                inputObject = OuijaTextUI.transform.GetChild(2).gameObject;
                 input = inputObject.GetComponent<TMP_InputField>();
                 input.onSubmit.AddListener(SubmitUI);
                 input.onEndEdit.AddListener(EndEditUI);
@@ -115,28 +120,28 @@ namespace LCOuijaBoard
 
             public static void hide()
             {
-                OuijaUI.SetActive(false);
+                OuijaTextUI.SetActive(false);
                 input.text = "";
             }
 
             public static void ToggleUI(InputAction.CallbackContext context)
             {
                 PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
-                Debug.Log("Ouija UI Toggle Requested");
-                if (local == null || !local.isPlayerDead) { Debug.Log("Toggle Denied: Not Dead"); return; }
-                if (OuijaUI == null) { Debug.Log("Toggle Denied: No UI"); return; } // Return if UI does not exist
-                bool shown = !OuijaUI.active;
+                Debug.Log("Ouija Text UI Toggle Requested");
+                if (local == null || !local.isPlayerDead) { Debug.Log("Ouija Text UI Toggle Denied: Not Dead"); return; }
+                if (OuijaTextUI == null) { Debug.Log("Ouija Text UI Toggle Denied: No UI"); return; } // Return if UI does not exist
+                bool shown = !OuijaTextUI.active;
                 GetInput();
-                Debug.Log($"Toggle Accepted: New State is {shown}");
+                Debug.Log($"Ouija Text UI Toggle Accepted: New State is {shown}");
                 if (!shown)
                 {
                     // Don't hide if still typing
-                    if (input.isFocused && OuijaUI.active) { return; }
-                    OuijaUI.SetActive(false);
+                    if (input.isFocused && OuijaTextUI.active) { return; }
+                    OuijaTextUI.SetActive(false);
                 }
                 else
                 {
-                    OuijaUI.SetActive(true);
+                    OuijaTextUI.SetActive(true);
                     input.ActivateInputField();
                     input.Select();
                 }
@@ -161,7 +166,7 @@ namespace LCOuijaBoard
                 foreach (GameObject obj in objects)
                 {
                     // Check if object is a ouija board and isn't held by a player
-                    if (obj.name == "OuijaBoard(Clone)" && !((PhysicsProp)obj.GetComponent(typeof(PhysicsProp))).isHeld)
+                    if ((obj.name == "OuijaBoardScrap(Clone)" || obj.name == "OuijaBoardStore(Clone)") && !((PhysicsProp)obj.GetComponent(typeof(PhysicsProp))).isHeld)
                     {
                         boards.Add(obj);
                     }
@@ -171,13 +176,13 @@ namespace LCOuijaBoard
                 {
                     if (!PlayerPatch.complete)
                     {
-                        // On cooldown
+                        ShowError("Boards on cooldown");
                         return false;
                     }
                     string message = String.Join("", args);
                     if (message.Length > 10)
                     {
-                        // Character limit
+                        ShowError("Too many characters");
                         return false;
                     }
                     OuijaNetworker.Instance.WriteOut(message);
@@ -185,9 +190,20 @@ namespace LCOuijaBoard
                 }
                 else
                 {
-                    // No valid boards
+                    ShowError("No valid boards");
                 }
                 return false;
+            }
+
+            public static void ShowError(string msg)
+            {
+                if (OuijaErrorUI != null)
+                {
+                    Debug.Log($"Ouija Board showing erorr: {msg}");
+                    OuijaErrorUI.transform.GetChild(0).GetComponent<TMP_Text>().text = msg;
+                    OuijaErrorUI.SetActive(true);
+                    lastError = Time.time;
+                }
             }
         }
 
@@ -223,10 +239,17 @@ namespace LCOuijaBoard
             static void UpdatePatch(ref PlayerControllerB __instance)
             {
                 // __instance.IsLocalPlayer is unreliable?
-                if (GameNetworkManager.Instance.localPlayerController && !GameNetworkManager.Instance.localPlayerController.isPlayerDead && OuijaUI.active)
+                PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
+                if (!local) return;
+                if (!local.isPlayerDead && OuijaTextUI && OuijaTextUI.active)
                 {
-                    Debug.Log("Ouija Board UI closed since player is not dead");
-                    OuijaUI.SetActive(false);
+                    Debug.Log("Ouija Text UI closed since player is not dead");
+                    OuijaTextUI.SetActive(false);
+                }
+                if (OuijaErrorUI && OuijaErrorUI.active && (Time.time - UIHandler.lastError) > 2f)
+                {
+                    Debug.Log("Ouija Error UI closed");
+                    OuijaErrorUI.SetActive(false);
                 }
                 if (writeIndex < names.Count)
                 {
@@ -250,6 +273,7 @@ namespace LCOuijaBoard
             {
                 int index = -1;
                 bool anyValid = false;
+                PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
                 foreach (GameObject board in boards)
                 {
                     if (!board) continue;
@@ -288,6 +312,10 @@ namespace LCOuijaBoard
                     if (amount == 1f) // Move the OldPaddle to the new location if at 100%
                     {
                         board.transform.GetChild(0).GetChild(4).localPosition = newPos;
+                    }
+                    if (Vector3.Distance(local.transform.position, board.transform.position) < 5f)
+                    {
+                        local.insanityLevel += Time.deltaTime * 0.5f;
                     }
                 }
                 if (!anyValid)
@@ -331,7 +359,7 @@ namespace LCOuijaBoard
                 foreach (GameObject obj in objects)
                 {
                     // Check if object is a ouija board and isn't held by a player
-                    if (obj.name == "OuijaBoard(Clone)" && !((PhysicsProp)obj.GetComponent(typeof(PhysicsProp))).isHeld)
+                    if ((obj.name == "OuijaBoardScrap(Clone)" || obj.name == "OuijaBoardStore(Clone)") && !((PhysicsProp)obj.GetComponent(typeof(PhysicsProp))).isHeld)
                     {
                         boards.Add(obj);
                     }
@@ -382,8 +410,10 @@ namespace LCOuijaBoard
                     GameObject ouijaNetworker = Instantiate<GameObject>(OuijaNetworkerPrefab);
                     ouijaNetworker.GetComponent<NetworkObject>().Spawn(true);
                 }
-                OuijaUI = Instantiate<GameObject>(OuijaUIPrefab);
-                OuijaUI.SetActive(false);
+                OuijaTextUI = Instantiate<GameObject>(OuijaTextUIPrefab);
+                OuijaTextUI.SetActive(false);
+                OuijaErrorUI = Instantiate<GameObject>(OuijaErrorUIPrefab);
+                OuijaErrorUI.SetActive(false);
             }
         }
     }

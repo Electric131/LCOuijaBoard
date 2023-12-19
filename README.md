@@ -6,12 +6,14 @@ Look no further! Dead players can now speak though ouija boards.
 Adds a UI message system that is used with a ouija board that can be found.
 
 Press 'o' while dead to enable the message popup.
+With the UI open, you can type any message (up to 10 characters). This includes
+invalid characters, but they will be skipped when showing the message on the board.
+
+You can also use the following shortcut messages (1 movement vs 3/2/7 respectively)
 Shortcut messages included:
 - y / yes
 - n / no
 - bye / goodbye
-
-Note: You can also type any message that is 10 characters long (invalid symbols STILL count but will not be written)
 
 # Contact/Find
 [Thunderstore](https://thunderstore.io/c/lethal-company/p/Electric131/OuijaBoard/)
@@ -50,3 +52,8 @@ First beta build.
 - UI closes automatically when you respawn
 - Config options for scrap / shop items as well as weight / cost respectively.
 - Fixed minor bugs
+
+## v1.2.0
+- Scrap vs store versions of Ouija Board items are separated
+- Player insanity increases when near a moving Ouija Board
+- Updated importance of any word (not just yes/no/goodbye)
