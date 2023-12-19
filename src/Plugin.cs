@@ -88,7 +88,7 @@ namespace LCOuijaBoard
                 Debug.Log($"Ouija Board store enabled at {storeCost} credits");
                 Items.RegisterShopItem(storeItem, storeCost);
             }
-            if (storeEnabled)
+            if (scrapEnabled)
             {
                 Debug.Log($"Ouija Board scrap spawn enabled at {scrapRarity} rarity weight");
                 Items.RegisterScrap(scrapItem, scrapRarity, Levels.LevelTypes.All);
