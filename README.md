@@ -39,3 +39,7 @@ First beta build.
 
 ## v1.0.1
 - Fixed the tooltip on the Ouija Board item
+
+## v1.0.2
+- Fixed UI not opening
+- Removed attempt to keep menu open on Enter

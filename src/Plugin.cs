@@ -35,7 +35,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.0.1";
+        private const string modVersion = "1.0.2";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
@@ -120,7 +120,6 @@ namespace LCOuijaBoard
             public static void SubmitUI(string msg)
             {
                 AttemptSend(msg);
-                OuijaUI.SetActive(true);
             }
 
             public static void EndEditUI(string msg)
