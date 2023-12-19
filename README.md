@@ -6,8 +6,8 @@ Look no further! Dead players can now speak though ouija boards.
 Adds a UI message system that is used with a ouija board that can be found.
 
 Press 'o' while dead to enable the message popup.
-With the UI open, you can type any message (up to 10 characters). This includes
-invalid characters, but they will be skipped when showing the message on the board.
+With the UI open, you can type any message (up to 10 characters).
+(Spaces will not be counted and will not be written)
 
 You can also use the following shortcut messages (1 movement vs 3/2/7 respectively)
 Shortcut messages included:
@@ -57,3 +57,7 @@ First beta build.
 - Scrap vs store versions of Ouija Board items are separated
 - Player insanity increases when near a moving Ouija Board
 - Updated importance of any word (not just yes/no/goodbye)
+
+## v1.2.1
+- Proper invalid character checking
+- Character limit fixed to not include spaces

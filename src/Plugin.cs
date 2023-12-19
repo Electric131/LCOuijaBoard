@@ -28,6 +28,7 @@ using TMPro;
 using UnityEngine.Windows;
 using static System.Net.Mime.MediaTypeNames;
 using System.IO.Ports;
+using System.Text.RegularExpressions;
 
 namespace LCOuijaBoard
 {
@@ -36,7 +37,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.2.0";
+        private const string modVersion = "1.2.1";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
@@ -180,6 +181,12 @@ namespace LCOuijaBoard
                         return false;
                     }
                     string message = String.Join("", args);
+                    if (Regex.Match(message, "([A-Za-z\\d ])+").Value.Length == message.Length)
+                    {
+                        ShowError("Invalid character(s)");
+                        return false;
+                    }
+                    message = message.Replace(" ", "");
                     if (message.Length > 10)
                     {
                         ShowError("Too many characters");
