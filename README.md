@@ -11,6 +11,8 @@ Shortcut messages included:
 - n / no
 - bye / goodbye
 
+Note: You can also type any message that is 10 characters long (invalid symbols STILL count but will not be written)
+
 # Contact/Find
 [Thunderstore](https://thunderstore.io/c/lethal-company/p/Electric131/OuijaBoard/)
 
@@ -43,3 +45,8 @@ First beta build.
 ## v1.0.2
 - Fixed UI not opening
 - Removed attempt to keep menu open on Enter
+
+## v1.1.0
+- UI closes automatically when you respawn
+- Config options for scrap / shop items as well as weight / cost respectively.
+- Fixed minor bugs

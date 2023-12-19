@@ -27,6 +27,7 @@ using System.Xml.Schema;
 using TMPro;
 using UnityEngine.Windows;
 using static System.Net.Mime.MediaTypeNames;
+using System.IO.Ports;
 
 namespace LCOuijaBoard
 {
@@ -35,14 +36,18 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.0.2";
+        private const string modVersion = "1.1.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
 
         public static Item item;
         public static GameObject itemObject;
-        public static int rarity;
+
+        public static bool storeEnabled;
+        public static int storeCost;
+        public static bool scrapEnabled;
+        public static int scrapRarity;
 
         public static GameObject OuijaNetworkerPrefab;
         public static GameObject OuijaUIPrefab;
@@ -66,11 +71,24 @@ namespace LCOuijaBoard
 
             chat = AccessTools.Method(typeof(HUDManager), "AddChatMessage");
 
-            rarity = Config.Bind("General", "Rarity", 20, "Chance for a ouija board to spawn (Weighted)").Value;
-            if (rarity < 0) { rarity = 0; }
+            storeEnabled = Config.Bind("Store", "Enabled", true, "Allow Ouija Board to be bought in the store").Value;
+            storeCost = Config.Bind("Store", "Cost", 100, "Cost of a Ouija Board in the store (Store must be enabled)").Value;
+            scrapEnabled = Config.Bind("Scrap", "Enabled", false, "Allow the Ouija Board to spawn in the facility").Value;
+            scrapRarity = Config.Bind("Scrap", "Rarity Weight", 20, "Chance for a Ouija Board to spawn as scrap").Value;
+            if (storeCost < 0) { storeCost = 0; }
+            if (scrapRarity < 0) { scrapRarity = 0; }
 
             item = data.LoadAsset<Item>("Assets/OuijaBoardItem.asset");
-            Items.RegisterScrap(item, rarity, Levels.LevelTypes.All);
+            if (storeEnabled)
+            {
+                Debug.Log($"Ouija Board store enabled at {storeCost} credits");
+                Items.RegisterShopItem(item, storeCost);
+            }
+            if (storeEnabled)
+            {
+                Debug.Log($"Ouija Board scrap spawn enabled at {scrapRarity} rarity weight");
+                Items.RegisterScrap(item, scrapRarity, Levels.LevelTypes.All);
+            }
 
             NetcodeWeaver();
 
@@ -83,11 +101,10 @@ namespace LCOuijaBoard
             public static GameObject inputObject;
             public static TMP_InputField input;
             public static bool registered;
-            public static bool shown = false;
 
             public static TMP_InputField GetInput()
             {
-                if (registered && !input) return input;
+                if (registered && (input != null)) return input;
                 inputObject = OuijaUI.transform.GetChild(2).gameObject;
                 input = inputObject.GetComponent<TMP_InputField>();
                 input.onSubmit.AddListener(SubmitUI);
@@ -96,22 +113,30 @@ namespace LCOuijaBoard
                 return input;
             }
 
+            public static void hide()
+            {
+                OuijaUI.SetActive(false);
+                input.text = "";
+            }
+
             public static void ToggleUI(InputAction.CallbackContext context)
             {
                 PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
-                if (!local.isPlayerDead) { return; }
-                if (!OuijaUI) { return; } // Return if UI does not exist
+                Debug.Log("Ouija UI Toggle Requested");
+                if (local == null || !local.isPlayerDead) { Debug.Log("Toggle Denied: Not Dead"); return; }
+                if (OuijaUI == null) { Debug.Log("Toggle Denied: No UI"); return; } // Return if UI does not exist
                 bool shown = !OuijaUI.active;
                 GetInput();
-                if (shown == false)
+                Debug.Log($"Toggle Accepted: New State is {shown}");
+                if (!shown)
                 {
                     // Don't hide if still typing
-                    if (input.isFocused) { return; }
-                    OuijaUI.SetActive(shown);
+                    if (input.isFocused && OuijaUI.active) { return; }
+                    OuijaUI.SetActive(false);
                 }
                 else
                 {
-                    OuijaUI.SetActive(shown);
+                    OuijaUI.SetActive(true);
                     input.ActivateInputField();
                     input.Select();
                 }
@@ -124,8 +149,7 @@ namespace LCOuijaBoard
 
             public static void EndEditUI(string msg)
             {
-                OuijaUI.SetActive(false);
-                input.text = "";
+                hide();
             }
 
             public static bool AttemptSend(string msg)
@@ -198,6 +222,12 @@ namespace LCOuijaBoard
             [HarmonyPostfix]
             static void UpdatePatch(ref PlayerControllerB __instance)
             {
+                // __instance.IsLocalPlayer is unreliable?
+                if (GameNetworkManager.Instance.localPlayerController && !GameNetworkManager.Instance.localPlayerController.isPlayerDead && OuijaUI.active)
+                {
+                    Debug.Log("Ouija Board UI closed since player is not dead");
+                    OuijaUI.SetActive(false);
+                }
                 if (writeIndex < names.Count)
                 {
                     amount = Mathf.Clamp(timer / 4f, 0, 1);
@@ -213,10 +243,6 @@ namespace LCOuijaBoard
                 {
                     complete = true;
                     amount = 0f;
-                }
-                if (!__instance.isPlayerDead)
-                {
-                    UIHandler.shown = false;
                 }
             }
 
