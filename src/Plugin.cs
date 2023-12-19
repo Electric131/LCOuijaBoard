@@ -35,7 +35,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.0.0";
+        private const string modVersion = "1.0.1";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;

@@ -36,3 +36,6 @@ First beta build.
 - I decided to add a github url for issues and possible pull requests.
 - Changed system to use a UI instead of chat
 - No responsive feedback for message not sending (will fix in later UI changes)
+
+## v1.0.1
+- Fixed the tooltip on the Ouija Board item
