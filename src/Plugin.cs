@@ -37,7 +37,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.2.1";
+        private const string modVersion = "1.3.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
@@ -46,6 +46,9 @@ namespace LCOuijaBoard
         public static int storeCost;
         public static bool scrapEnabled;
         public static int scrapRarity;
+        public static bool makesSound;
+
+        private static bool DEVDEBUG = true; // Disable some checks to make it easier to debug
 
         public static GameObject OuijaNetworkerPrefab;
         public static GameObject OuijaTextUIPrefab;
@@ -80,6 +83,8 @@ namespace LCOuijaBoard
             scrapRarity = Config.Bind("Scrap", "Rarity Weight", 20, "Chance for a Ouija Board to spawn as scrap").Value;
             if (storeCost < 0) { storeCost = 0; }
             if (scrapRarity < 0) { scrapRarity = 0; }
+
+            makesSound = Config.Bind("General", "Makes Sound", true, "Enables the Ouija Board's sliding to be heard by enemies").Value;
 
             Item storeItem = data.LoadAsset<Item>("Assets/OuijaBoardStoreItem.asset");
             Item scrapItem = data.LoadAsset<Item>("Assets/OuijaBoardScrapItem.asset");
@@ -129,8 +134,8 @@ namespace LCOuijaBoard
             {
                 PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
                 Debug.Log("Ouija Text UI Toggle Requested");
-                if (local == null || !local.isPlayerDead) { Debug.Log("Ouija Text UI Toggle Denied: Not Dead"); return; }
-                if (OuijaTextUI == null) { Debug.Log("Ouija Text UI Toggle Denied: No UI"); return; } // Return if UI does not exist
+                if (!DEVDEBUG && (local == null || !local.isPlayerDead)) { Debug.Log("Ouija Text UI Toggle Denied: Not Dead"); return; }
+                if (OuijaTextUI == null) { Debug.LogError("Ouija Text UI Toggle Denied: No UI"); return; } // Return if UI does not exist
                 bool shown = !OuijaTextUI.active;
                 GetInput();
                 Debug.Log($"Ouija Text UI Toggle Accepted: New State is {shown}");
@@ -181,7 +186,7 @@ namespace LCOuijaBoard
                         return false;
                     }
                     string message = String.Join("", args);
-                    if (Regex.Match(message, "([A-Za-z\\d ])+").Value.Length == message.Length)
+                    if (Regex.Match(message, "([A-Za-z\\d ])+").Value.Length != message.Length)
                     {
                         ShowError("Invalid character(s)");
                         return false;
@@ -248,7 +253,7 @@ namespace LCOuijaBoard
                 // __instance.IsLocalPlayer is unreliable?
                 PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
                 if (!local) return;
-                if (!local.isPlayerDead && OuijaTextUI && OuijaTextUI.active)
+                if ((!DEVDEBUG && !local.isPlayerDead) && OuijaTextUI && OuijaTextUI.active)
                 {
                     Debug.Log("Ouija Text UI closed since player is not dead");
                     OuijaTextUI.SetActive(false);
@@ -263,7 +268,7 @@ namespace LCOuijaBoard
                     amount = Mathf.Clamp(timer / 4f, 0, 1);
                     MoveUpdate(names[writeIndex]);
                     timer += Time.deltaTime;
-                    if (timer < 8f) { return; }
+                    if (timer < 10f) { return; }
                     amount = 1;
                     MoveUpdate(names[writeIndex]);
                     timer = 0;
@@ -313,7 +318,11 @@ namespace LCOuijaBoard
                     Vector3 position = board.transform.GetChild(0).GetChild(3).GetChild(index).localPosition; // Selectors
                     Vector3 oldPosition = board.transform.GetChild(0).GetChild(4).localPosition; // OldPaddle
                     GameObject paddle = board.transform.GetChild(0).GetChild(2).gameObject; // Paddle
-                    if (amount == 0) { paddle.GetComponent<AudioSource>().Play(); } // Sliding Sound
+                    if (amount == 0) // Sliding Sound
+                    {
+                        paddle.GetComponent<AudioSource>().Play();
+                        if (makesSound) RoundManager.Instance.PlayAudibleNoise(board.transform.position, 8f, 0.3f, noiseID: 8925);
+                    }
                     Vector3 newPos = position + new Vector3(0f, 0.166f, 0f); // Position to move to + y offset
                     paddle.transform.localPosition = Vector3.Lerp(oldPosition, newPos, (float)amount);
                     if (amount == 1f) // Move the OldPaddle to the new location if at 100%

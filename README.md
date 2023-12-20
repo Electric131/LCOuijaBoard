@@ -24,6 +24,8 @@ Shortcut messages included:
 
 [Unofficial Discord](https://discord.gg/lethal-company) [Forum Post](https://discord.com/channels/1169792572382773318/1186411214390181908)
 
+(btw I would love it if you sent clips of the Ouija Board in action in the forum post <3)
+
 # Changelog / Patchnotes
 
 ## v0.1.0
@@ -61,3 +63,9 @@ First beta build.
 ## v1.2.1
 - Proper invalid character checking
 - Character limit fixed to not include spaces
+
+## v1.3.0
+- Fixed scrap spawn being tied to store config (thanks karmaBonfire)
+- New config option to make enemies hear the sliding sound (Ex. Dogs)
+- Paddle stays where it is longer (moves then stays there longer)
+- Fixed sliding sound being global
