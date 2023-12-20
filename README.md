@@ -64,8 +64,12 @@ First beta build.
 - Proper invalid character checking
 - Character limit fixed to not include spaces
 
-## v1.3.0
+## v1.3.0 - DO NOT USE
 - Fixed scrap spawn being tied to store config (thanks karmaBonfire)
 - New config option to make enemies hear the sliding sound (Ex. Dogs)
 - Paddle stays where it is longer (moves then stays there longer)
 - Fixed sliding sound being global
+- LEFT DEBUG VAR ON (DO NOT USE THIS VERSION)
+
+## v1.3.1
+- Disabled dev var ._.

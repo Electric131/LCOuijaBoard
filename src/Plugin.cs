@@ -37,7 +37,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.3.0";
+        private const string modVersion = "1.3.1";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
@@ -48,7 +48,7 @@ namespace LCOuijaBoard
         public static int scrapRarity;
         public static bool makesSound;
 
-        private static bool DEVDEBUG = true; // Disable some checks to make it easier to debug
+        private static bool DEVDEBUG = false; // Disable some checks to make it easier to debug
 
         public static GameObject OuijaNetworkerPrefab;
         public static GameObject OuijaTextUIPrefab;
