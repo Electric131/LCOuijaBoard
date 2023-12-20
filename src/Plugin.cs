@@ -37,7 +37,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.3.1";
+        private const string modVersion = "1.4.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
@@ -180,7 +180,7 @@ namespace LCOuijaBoard
                 // Check if any boards exist
                 if (boards.Count > 0)
                 {
-                    if (!PlayerPatch.complete)
+                    if (!StartOfRoundPatch.complete)
                     {
                         ShowError("Boards on cooldown");
                         return false;
@@ -236,8 +236,8 @@ namespace LCOuijaBoard
             }
         }
 
-        [HarmonyPatch(typeof(PlayerControllerB))]
-        public class PlayerPatch
+        [HarmonyPatch(typeof(StartOfRound))]
+        public class StartOfRoundPatch
         {
             public static int writeIndex = 0;
             public static List<string> names = new List<string>();
@@ -248,11 +248,9 @@ namespace LCOuijaBoard
 
             [HarmonyPatch("Update")]
             [HarmonyPostfix]
-            static void UpdatePatch(ref PlayerControllerB __instance)
+            static void Update(ref StartOfRound __instance)
             {
-                // __instance.IsLocalPlayer is unreliable?
-                PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
-                if (!local) return;
+                PlayerControllerB local = __instance.localPlayerController;
                 if ((!DEVDEBUG && !local.isPlayerDead) && OuijaTextUI && OuijaTextUI.active)
                 {
                     Debug.Log("Ouija Text UI closed since player is not dead");
@@ -265,19 +263,32 @@ namespace LCOuijaBoard
                 }
                 if (writeIndex < names.Count)
                 {
-                    amount = Mathf.Clamp(timer / 4f, 0, 1);
+                    amount = Mathf.Clamp(timer / 1.2f, 0, 1);
                     MoveUpdate(names[writeIndex]);
                     timer += Time.deltaTime;
-                    if (timer < 10f) { return; }
-                    amount = 1;
-                    MoveUpdate(names[writeIndex]);
-                    timer = 0;
-                    writeIndex++;
+                    if (timer >= 3f)
+                    {
+                        amount = 1f;
+                        MoveUpdate(names[writeIndex]);
+                        timer = 0f;
+                        writeIndex++;
+                    }
                 }
-                else
+                else if (!complete)
                 {
-                    complete = true;
-                    amount = 0f;
+                    if (timer < 5f)
+                    {
+                        timer += Time.deltaTime;
+                    } else
+                    {
+                        complete = true;
+                        timer = 0f;
+                        amount = 0f;
+                    }
+                }
+                if (OuijaTextUI != null)
+                {
+                    OuijaTextUI.transform.GetChild(3).gameObject.SetActive(!complete);
                 }
             }
 
@@ -400,11 +411,11 @@ namespace LCOuijaBoard
                         final = message.ToUpper().ToCharArray().Select(c => c.ToString()).ToList();
                         break;
                 }
-                PlayerPatch.amount = 0f;
-                PlayerPatch.complete = false;
-                PlayerPatch.writeIndex = 0;
-                PlayerPatch.names = final;
-                PlayerPatch.boards = boards;
+                StartOfRoundPatch.amount = 0f;
+                StartOfRoundPatch.complete = false;
+                StartOfRoundPatch.writeIndex = 0;
+                StartOfRoundPatch.names = final;
+                StartOfRoundPatch.boards = boards;
             }
 
             [ServerRpc(RequireOwnership = false)]

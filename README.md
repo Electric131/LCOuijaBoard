@@ -73,3 +73,7 @@ First beta build.
 
 ## v1.3.1
 - Disabled dev var ._.
+
+## v1.4.0
+- Fixed timing of movements scaling to player count (now constant)
+- Added text in Text UI to show if boards are on cooldown before you hit enter
