@@ -37,7 +37,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.4.0";
+        private const string modVersion = "1.5.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
         private static MethodInfo chat;
@@ -279,7 +279,8 @@ namespace LCOuijaBoard
                     if (timer < 5f)
                     {
                         timer += Time.deltaTime;
-                    } else
+                    }
+                    else
                     {
                         complete = true;
                         timer = 0f;
@@ -350,6 +351,29 @@ namespace LCOuijaBoard
                     // Stop message entirely
                     writeIndex = names.Count;
                 }
+            }
+        }
+
+        [HarmonyPatch(typeof(PlayerControllerB))]
+        [HarmonyPriority(Priority.HigherThanNormal)]
+        public class PlayerPatch
+        {
+            [HarmonyPatch("Interact_performed")]
+            [HarmonyPrefix]
+            private static void InteractPrefixPatch(ref PlayerControllerB __instance, out bool __state)
+            {
+                __state = __instance.isPlayerDead;
+                if (OuijaTextUI && OuijaTextUI.active)
+                {
+                    __instance.isPlayerDead = false;
+                }
+            }
+
+            [HarmonyPatch("Interact_performed")]
+            [HarmonyPostfix]
+            private static void InteractPostfixPatch(ref PlayerControllerB __instance, bool __state)
+            {
+                __instance.isPlayerDead = __state;
             }
         }
 

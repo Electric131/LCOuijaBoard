@@ -77,3 +77,6 @@ First beta build.
 ## v1.4.0
 - Fixed timing of movements scaling to player count (now constant)
 - Added text in Text UI to show if boards are on cooldown before you hit enter
+
+## v1.5.0
+- Bypass interact checks when UI is open by making game temporarily think player is alive (WORKS WITH SPECTATE ENEMIES!!!)
