@@ -80,3 +80,6 @@ First beta build.
 
 ## v1.5.0
 - Bypass interact checks when UI is open by making game temporarily think player is alive (WORKS WITH SPECTATE ENEMIES!!!)
+
+## v1.5.1
+- Config option to change menu keybind. (brought up by demosche)

@@ -5,29 +5,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using HarmonyLib;
 using BepInEx;
 using UnityEngine.InputSystem;
 using LethalLib.Modules;
 using GameNetcodeStuff;
-using System.Runtime.InteropServices;
-using UnityEngine.EventSystems;
 using System.Reflection;
 using Object = UnityEngine.Object;
 using Unity.Netcode;
-using System.Xml.Linq;
-using static LCOuijaBoard.Plugin;
 using NetworkPrefabs = LethalLib.Modules.NetworkPrefabs;
-using UnityEngine.UI;
-using UnityEngine.InputSystem.LowLevel;
-using System.Xml.Schema;
 using TMPro;
-using UnityEngine.Windows;
-using static System.Net.Mime.MediaTypeNames;
-using System.IO.Ports;
 using System.Text.RegularExpressions;
 
 namespace LCOuijaBoard
@@ -37,10 +25,9 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.5.0";
+        private const string modVersion = "1.5.1";
 
         private readonly Harmony harmony = new Harmony(modGUID);
-        private static MethodInfo chat;
 
         public static bool storeEnabled;
         public static int storeCost;
@@ -71,11 +58,9 @@ namespace LCOuijaBoard
             NetworkPrefabs.RegisterNetworkPrefab(itemStoreObject);
             NetworkPrefabs.RegisterNetworkPrefab(itemScrapObject);
 
-            InputAction action = new InputAction(binding: "<Keyboard>/#(o)");
+            InputAction action = new InputAction(binding: $"<Keyboard>/#({Config.Bind("General", "Keybind", "o", "(Clientside) The key that will open the Ouija Board UI. Note: This will NOT change the tooltip on the item").Value})");
             action.performed += UIHandler.ToggleUI;
             action.Enable();
-
-            chat = AccessTools.Method(typeof(HUDManager), "AddChatMessage");
 
             storeEnabled = Config.Bind("Store", "Enabled", true, "Allow Ouija Board to be bought in the store").Value;
             storeCost = Config.Bind("Store", "Cost", 100, "Cost of a Ouija Board in the store (Store must be enabled)").Value;
