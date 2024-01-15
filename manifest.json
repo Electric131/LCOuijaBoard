@@ -2,7 +2,7 @@
     "name": "OuijaBoard",
     "author": "Electric131",
     "website_url": "https://github.com/Electric131/LCOuijaBoard",
-    "version_number": "1.5.1",
+    "version_number": "1.5.2",
     "description": "Give the dead the ability to communicate through a Ouija Board.",
     "dependencies": [
         "BepInEx-BepInExPack-5.4.2100",

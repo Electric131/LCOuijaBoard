@@ -25,7 +25,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.5.1";
+        private const string modVersion = "1.5.2";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -81,6 +81,8 @@ namespace LCOuijaBoard
             if (scrapEnabled)
             {
                 Debug.Log($"Ouija Board scrap spawn enabled at {scrapRarity} rarity weight");
+                scrapItem.minValue = Mathf.Max(Config.Bind("Scrap", "Min Value", 60, "The minimum value of the Ouija Board (must be > 0)").Value, 1);
+                scrapItem.maxValue = Mathf.Max(Config.Bind("Scrap", "Max Value", 80, "The maximum value of the Ouija Board (must be > min value)").Value, scrapItem.minValue);
                 Items.RegisterScrap(scrapItem, scrapRarity, Levels.LevelTypes.All);
             }
 
@@ -118,6 +120,7 @@ namespace LCOuijaBoard
             public static void ToggleUI(InputAction.CallbackContext context)
             {
                 PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
+                if (!local) return; // Ignore case where player does not exist yet
                 Debug.Log("Ouija Text UI Toggle Requested");
                 if (!DEVDEBUG && (local == null || !local.isPlayerDead)) { Debug.Log("Ouija Text UI Toggle Denied: Not Dead"); return; }
                 if (OuijaTextUI == null) { Debug.LogError("Ouija Text UI Toggle Denied: No UI"); return; } // Return if UI does not exist
@@ -236,6 +239,7 @@ namespace LCOuijaBoard
             static void Update(ref StartOfRound __instance)
             {
                 PlayerControllerB local = __instance.localPlayerController;
+                if (!local) return; // Ignore case where player does not exist yet
                 if ((!DEVDEBUG && !local.isPlayerDead) && OuijaTextUI && OuijaTextUI.active)
                 {
                     Debug.Log("Ouija Text UI closed since player is not dead");
