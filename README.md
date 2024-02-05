@@ -87,3 +87,6 @@ First beta build.
 ## v1.5.2
 - Added config options for min and max price
 - Fixed error logging when player was invalid
+
+## v1.5.3
+- Fixes compatibility with SpectateEnemies (Due to the changed input method)

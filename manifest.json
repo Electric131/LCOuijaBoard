@@ -6,6 +6,7 @@
     "description": "Give the dead the ability to communicate through a Ouija Board.",
     "dependencies": [
         "BepInEx-BepInExPack-5.4.2100",
-        "Evaisa-LethalLib-0.6.3"
+        "Evaisa-LethalLib-0.14.2",
+        "Rune580-LethalCompany_InputUtils-0.6.3"
     ]
 }

@@ -25,7 +25,7 @@ namespace LCOuijaBoard
     {
         private const string modGUID = "Electric.OuijaBoard";
         private const string modName = "OuijaBoard";
-        private const string modVersion = "1.5.2";
+        private const string modVersion = "1.5.3";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -114,6 +114,7 @@ namespace LCOuijaBoard
             public static void hide()
             {
                 OuijaTextUI.SetActive(false);
+                Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 input.text = "";
             }
 
@@ -132,9 +133,11 @@ namespace LCOuijaBoard
                     // Don't hide if still typing
                     if (input.isFocused && OuijaTextUI.active) { return; }
                     OuijaTextUI.SetActive(false);
+                    Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 }
                 else
                 {
+                    Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("DisableForRebind").GetValue();
                     OuijaTextUI.SetActive(true);
                     input.ActivateInputField();
                     input.Select();
@@ -244,11 +247,13 @@ namespace LCOuijaBoard
                 {
                     Debug.Log("Ouija Text UI closed since player is not dead");
                     OuijaTextUI.SetActive(false);
+                    Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 }
                 if (OuijaErrorUI && OuijaErrorUI.active && (Time.time - UIHandler.lastError) > 2f)
                 {
                     Debug.Log("Ouija Error UI closed");
                     OuijaErrorUI.SetActive(false);
+                    Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 }
                 if (writeIndex < names.Count)
                 {
@@ -452,6 +457,7 @@ namespace LCOuijaBoard
                 }
                 OuijaTextUI = Instantiate<GameObject>(OuijaTextUIPrefab);
                 OuijaTextUI.SetActive(false);
+                Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 OuijaErrorUI = Instantiate<GameObject>(OuijaErrorUIPrefab);
                 OuijaErrorUI.SetActive(false);
             }
