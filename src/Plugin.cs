@@ -1,4 +1,4 @@
-
+﻿
 // It's not really the cleanest, I didn't bother to split this into multiple files.
 // Deal with it.
 
@@ -14,13 +14,15 @@ using GameNetcodeStuff;
 using System.Reflection;
 using Object = UnityEngine.Object;
 using Unity.Netcode;
-using NetworkPrefabs = LethalLib.Modules.NetworkPrefabs;
 using TMPro;
 using System.Text.RegularExpressions;
+using LethalCompanyInputUtils;
 
 namespace LCOuijaBoard
 {
     [BepInPlugin(modGUID, modName, modVersion)]
+    [BepInDependency(LethalLib.Plugin.ModGUID)]
+    [BepInDependency("com.rune580.LethalCompanyInputUtils", BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
     {
         private const string modGUID = "Electric.OuijaBoard";
@@ -37,6 +39,8 @@ namespace LCOuijaBoard
 
         private static bool DEVDEBUG = false; // Disable some checks to make it easier to debug
 
+        public static BepInEx.Logging.ManualLogSource logger;
+
         public static GameObject OuijaNetworkerPrefab;
         public static GameObject OuijaTextUIPrefab;
         public static GameObject OuijaTextUI;
@@ -45,6 +49,8 @@ namespace LCOuijaBoard
 
         private void Awake()
         {
+            logger = Logger;
+
             AssetBundle data = AssetBundle.LoadFromMemory(Properties.Resources.fullboard);
             OuijaNetworkerPrefab = data.LoadAsset<GameObject>("Assets/OuijaNetworker.prefab");
             OuijaNetworkerPrefab.AddComponent<OuijaNetworker>();
@@ -54,9 +60,9 @@ namespace LCOuijaBoard
             GameObject itemStoreObject = data.LoadAsset<GameObject>("Assets/OuijaBoardStore.prefab");
             GameObject itemScrapObject = data.LoadAsset<GameObject>("Assets/OuijaBoardScrap.prefab");
 
-            NetworkPrefabs.RegisterNetworkPrefab(OuijaNetworkerPrefab);
-            NetworkPrefabs.RegisterNetworkPrefab(itemStoreObject);
-            NetworkPrefabs.RegisterNetworkPrefab(itemScrapObject);
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(OuijaNetworkerPrefab);
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(itemStoreObject);
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(itemScrapObject);
 
             InputAction action = new InputAction(binding: $"<Keyboard>/#({Config.Bind("General", "Keybind", "o", "(Clientside) The key that will open the Ouija Board UI. Note: This will NOT change the tooltip on the item").Value})");
             action.performed += UIHandler.ToggleUI;
@@ -75,12 +81,12 @@ namespace LCOuijaBoard
             Item scrapItem = data.LoadAsset<Item>("Assets/OuijaBoardScrapItem.asset");
             if (storeEnabled)
             {
-                Debug.Log($"Ouija Board store enabled at {storeCost} credits");
+                Logger.LogInfo($"Ouija Board store enabled at {storeCost} credits");
                 Items.RegisterShopItem(storeItem, storeCost);
             }
             if (scrapEnabled)
             {
-                Debug.Log($"Ouija Board scrap spawn enabled at {scrapRarity} rarity weight");
+                Logger.LogInfo($"Ouija Board scrap spawn enabled at {scrapRarity} rarity weight");
                 scrapItem.minValue = Mathf.Max(Config.Bind("Scrap", "Min Value", 60, "The minimum value of the Ouija Board (must be > 0)").Value, 1);
                 scrapItem.maxValue = Mathf.Max(Config.Bind("Scrap", "Max Value", 80, "The maximum value of the Ouija Board (must be > min value)").Value, scrapItem.minValue);
                 Items.RegisterScrap(scrapItem, scrapRarity, Levels.LevelTypes.All);
@@ -122,12 +128,12 @@ namespace LCOuijaBoard
             {
                 PlayerControllerB local = GameNetworkManager.Instance.localPlayerController;
                 if (!local) return; // Ignore case where player does not exist yet
-                Debug.Log("Ouija Text UI Toggle Requested");
-                if (!DEVDEBUG && (local == null || !local.isPlayerDead)) { Debug.Log("Ouija Text UI Toggle Denied: Not Dead"); return; }
-                if (OuijaTextUI == null) { Debug.LogError("Ouija Text UI Toggle Denied: No UI"); return; } // Return if UI does not exist
+                logger.LogInfo("Ouija Text UI Toggle Requested");
+                if (!DEVDEBUG && (local == null || !local.isPlayerDead)) { logger.LogInfo("Ouija Text UI Toggle Denied: Not Dead"); return; }
+                if (OuijaTextUI == null) { logger.LogError("Ouija Text UI Toggle Denied: No UI"); return; } // Return if UI does not exist
                 bool shown = !OuijaTextUI.active;
                 GetInput();
-                Debug.Log($"Ouija Text UI Toggle Accepted: New State is {shown}");
+                logger.LogInfo($"Ouija Text UI Toggle Accepted: New State is {shown}");
                 if (!shown)
                 {
                     // Don't hide if still typing
@@ -202,7 +208,7 @@ namespace LCOuijaBoard
             {
                 if (OuijaErrorUI != null)
                 {
-                    Debug.Log($"Ouija Board showing erorr: {msg}");
+                    logger.LogInfo($"Ouija Board showing erorr: {msg}");
                     OuijaErrorUI.transform.GetChild(0).GetComponent<TMP_Text>().text = msg;
                     OuijaErrorUI.SetActive(true);
                     lastError = Time.time;
@@ -245,13 +251,13 @@ namespace LCOuijaBoard
                 if (!local) return; // Ignore case where player does not exist yet
                 if ((!DEVDEBUG && !local.isPlayerDead) && OuijaTextUI && OuijaTextUI.active)
                 {
-                    Debug.Log("Ouija Text UI closed since player is not dead");
+                    logger.LogInfo("Ouija Text UI closed since player is not dead");
                     OuijaTextUI.SetActive(false);
                     Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 }
                 if (OuijaErrorUI && OuijaErrorUI.active && (Time.time - UIHandler.lastError) > 2f)
                 {
-                    Debug.Log("Ouija Error UI closed");
+                    logger.LogInfo("Ouija Error UI closed");
                     OuijaErrorUI.SetActive(false);
                     Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 }
@@ -452,11 +458,13 @@ namespace LCOuijaBoard
             {
                 if (__instance.IsServer && OuijaNetworker.Instance == null)
                 {
+                    logger.LogInfo(OuijaNetworkerPrefab);
                     GameObject ouijaNetworker = Instantiate<GameObject>(OuijaNetworkerPrefab);
                     ouijaNetworker.GetComponent<NetworkObject>().Spawn(true);
                 }
+                logger.LogInfo(OuijaTextUIPrefab);
                 OuijaTextUI = Instantiate<GameObject>(OuijaTextUIPrefab);
-                OuijaTextUI.SetActive(false);
+                // OuijaTextUI.SetActive(false);
                 Traverse.Create(typeof(LethalCompanyInputUtils.LcInputActionApi)).Method("ReEnableFromRebind").GetValue();
                 OuijaErrorUI = Instantiate<GameObject>(OuijaErrorUIPrefab);
                 OuijaErrorUI.SetActive(false);
