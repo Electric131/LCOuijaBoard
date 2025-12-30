@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>LCOuijaBoard</AssemblyName>
     <Description>Give the dead the ability to communicate through a Ouija Board.</Description>
-    <Version>1.5.4</Version>
+    <Version>1.5.5</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>

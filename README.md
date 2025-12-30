@@ -116,3 +116,7 @@ First beta build.
 ## v1.5.4
 
 - Updated to v73 of the game
+
+## v1.5.5
+
+- Properly uploaded dll...
